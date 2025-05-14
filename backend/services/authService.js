@@ -17,10 +17,6 @@ export async function loginService(userName, password) {
 
         let user = userFromRawQuery.length === 0 ? userWithoutPassCheck : userFromRawQuery[0];
 
-                console.log(userFromRawQuery);
-                console.log(userWithoutPassCheck);
-                console.log(user);
-
         const salt = userWithoutPassCheck.salt;
         const hmac = crypto.createHmac('sha256', salt);
         hmac.update(password);
@@ -57,7 +53,7 @@ export async function loginService(userName, password) {
         user.loginAttempts = 0;
         user.loginTimeOut = null;
         await userRepository.save(user);
-        return { status: 200, message: "Login successful" };
+        return { status: 200, message: "Login successful", token };
 
     } catch (error) {
         console.error(error);
