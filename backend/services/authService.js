@@ -20,7 +20,23 @@ export async function loginService(userName, password) {
             return { status: 404, message: "Invalid username or password" };
         }
 
+        if (password !== user.password) {
+            user.loginAttempts += 1;
+            await userRepository.save(user);
+            if (user.loginAttempts >= passwordConfig.login_attempts) {
+                user.loginTimeOut = new Date();
+                await userRepository.save(user);
+                return { status: 403, message: "you are blocked from login, you can try again later." }
+            }
+            return { status: 400, message: "Invalid username or password" };
+        }
+
         const token = generateToken(user);
+
+        user.loginAttempts = 0;
+        user.loginTimeOut = null;
+        await userRepository.save(user);
+        
         return { status: 200, message: "Login successful", token };
 
     } catch (error) {
