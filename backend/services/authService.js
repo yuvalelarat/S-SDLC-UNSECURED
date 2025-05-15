@@ -36,7 +36,7 @@ export async function loginService(userName, password) {
         user.loginAttempts = 0;
         user.loginTimeOut = null;
         await userRepository.save(user);
-        
+
         return { status: 200, message: "Login successful", token };
 
     } catch (error) {
@@ -100,9 +100,10 @@ export async function resetPasswordService(userName, currentPassword, newPasswor
 
         const passwordList = user.passwordList;
 
-        const salt = crypto.randomBytes(16).toString('hex');
-        const hmac = crypto.createHmac('sha256', salt);
-        hmac.update(password);
+        const currentPasswordDiff = currentPassword === user.password;
+        if (!currentPasswordDiff) {
+            return { status: 400, message: "Current password is incorrect" };
+        }
 
         if (passwordList) {
             for (let i = 0; i < passwordConfig.password_history; i++) {
@@ -122,7 +123,6 @@ export async function resetPasswordService(userName, currentPassword, newPasswor
         }
 
         user.password = newPassword;
-        user.salt = salt;
         user.tempPass = null;
 
         await userRepository.save(user);
@@ -148,18 +148,32 @@ export async function resetPasswordNoTokenService(email, newPassword) {
             return { status: 404, message: "User not found" };
         }
 
-        const salt = crypto.randomBytes(16).toString('hex');
-        const hmac = crypto.createHmac('sha256', salt);
-        hmac.update(password);
-
         const isSamePassword = newPassword == user.password;
 
         if (isSamePassword) {
             return { status: 400, message: "New password cannot be the same as the current password" };
         }
 
+        const passwordList = user.passwordList;
+
+        if (passwordList) {
+            for (let i = 0; i < passwordConfig.password_history; i++) {
+                if (passwordList[i]) {
+                    const matchedPasswords = newPassword == passwordList[i].oldPass
+                    if (matchedPasswords) return { status: 400, message: "New password cannot be the same as old passwords" };
+                }
+            }
+        }
+
+        const movePassword = user.password
+
+        if (passwordList) {
+            passwordList.unshift({ oldPass: movePassword })
+        } else {
+            user.passwordList = [{ oldPass: movePassword }]
+        }
+
         user.password = newPassword;
-        user.salt = salt;
         user.tempPass = null;
 
         await userRepository.save(user);
