@@ -8,51 +8,19 @@ import { passwordConfig } from '../utils/passwordConfig.js';
 export async function loginService(userName, password) {
     try {
         const userRepository = AppDataSource.getRepository(User);
-        const userWithoutPassCheck = await userRepository.findOne({ where: { userName } });
+
         const rawQuery = `SELECT * FROM public.users
-                WHERE "userName" = '${userName}' AND "password" = '${password}'
-                `;
+            WHERE "userName" = '${userName}' AND "password" = '${password}'`;
 
         const userFromRawQuery = await userRepository.query(rawQuery);
 
-        let user = userFromRawQuery.length === 0 ? userWithoutPassCheck : userFromRawQuery[0];
-
-        const salt = userWithoutPassCheck.salt;
-        const hmac = crypto.createHmac('sha256', salt);
-        hmac.update(password);
-        const hashedPassword = hmac.digest('hex');
+        const user = userFromRawQuery.length > 0 ? userFromRawQuery[0] : null;
 
         if (!user) {
             return { status: 404, message: "Invalid username or password" };
         }
 
-        if (user.loginTimeOut <= new Date(Date.now() - 15 * 60 * 1000) && (user.loginAttempts >= passwordConfig.login_attempts)) {
-            user.loginAttempts = 0;
-            user.loginTimeOut = null;
-            await userRepository.save(user);
-        }
-
-        if (user.loginAttempts >= passwordConfig.login_attempts) {
-            return { status: 403, message: "you are blocked from login, you can try again later." }
-        }
-
-
-        if (hashedPassword !== user.password) {
-            user.loginAttempts += 1;
-            await userRepository.save(user);
-            if (user.loginAttempts >= passwordConfig.login_attempts) {
-                user.loginTimeOut = new Date();
-                await userRepository.save(user);
-                return { status: 403, message: "you are blocked from login, you can try again later." }
-            }
-            return { status: 400, message: "Invalid username or passwordd" };
-        }
-
         const token = generateToken(user);
-
-        user.loginAttempts = 0;
-        user.loginTimeOut = null;
-        await userRepository.save(user);
         return { status: 200, message: "Login successful", token };
 
     } catch (error) {
@@ -60,6 +28,7 @@ export async function loginService(userName, password) {
         return { status: 500, message: "Internal Server Error", error: error.message };
     }
 }
+
 
 export async function registerService(userName, email, password) {
     try {
@@ -78,14 +47,11 @@ export async function registerService(userName, email, password) {
         }
 
         const salt = crypto.randomBytes(16).toString('hex');
-        const hmac = crypto.createHmac('sha256', salt);
-        hmac.update(password);
-        const hashedPassword = hmac.digest('hex');
 
         const newUser = userRepository.create({
             userName,
             email,
-            password: hashedPassword,
+            password: password,
             salt,
         });
 
@@ -121,12 +87,11 @@ export async function resetPasswordService(userName, currentPassword, newPasswor
         const salt = crypto.randomBytes(16).toString('hex');
         const hmac = crypto.createHmac('sha256', salt);
         hmac.update(password);
-        const hashedPassword = hmac.digest('hex');
 
         if (passwordList) {
             for (let i = 0; i < passwordConfig.password_history; i++) {
                 if (passwordList[i]) {
-                    const matchedPasswords = hashedPassword === passwordList[i].oldPass;
+                    const matchedPasswords = newPassword === passwordList[i].oldPass;
                     if (matchedPasswords) return { status: 400, message: "New password cannot be the same as old passwords" };
                 }
             }
@@ -140,7 +105,7 @@ export async function resetPasswordService(userName, currentPassword, newPasswor
             user.passwordList = [{ oldPass: movePassword }]
         }
 
-        user.password = hashedPassword;
+        user.password = newPassword;
         user.salt = salt;
         user.tempPass = null;
 
@@ -170,15 +135,14 @@ export async function resetPasswordNoTokenService(email, newPassword) {
         const salt = crypto.randomBytes(16).toString('hex');
         const hmac = crypto.createHmac('sha256', salt);
         hmac.update(password);
-        const hashedPassword = hmac.digest('hex');
 
-        const isSamePassword = hashedPassword == user.password;
+        const isSamePassword = newPassword == user.password;
 
         if (isSamePassword) {
             return { status: 400, message: "New password cannot be the same as the current password" };
         }
 
-        user.password = hashedPassword;
+        user.password = newPassword;
         user.salt = salt;
         user.tempPass = null;
 
