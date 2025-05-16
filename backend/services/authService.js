@@ -20,7 +20,9 @@ export async function loginService(userName, password) {
             return { status: 404, message: "Invalid username or password" };
         }
 
-        if (password !== user.password) {
+        const checkUserName = await userRepository.findOne({ where: { userName } });
+
+        if (checkUserName && !user) {
             user.loginAttempts += 1;
             await userRepository.save(user);
             if (user.loginAttempts >= passwordConfig.login_attempts) {
@@ -28,7 +30,7 @@ export async function loginService(userName, password) {
                 await userRepository.save(user);
                 return { status: 403, message: "you are blocked from login, you can try again later." }
             }
-            return { status: 400, message: "Invalid username or password" };
+            return { status: 400, message: "Invalid username or passwordd" };
         }
 
         const token = generateToken(user);
@@ -50,15 +52,20 @@ export async function registerService(userName, email, password) {
     try {
         const userRepository = AppDataSource.getRepository(User);
 
-        const nonUniqueEmail = await userRepository.findOne({ where: { email } });
+        const nonUniqueEmailQuery = `SELECT * FROM public.users
+            WHERE "email" = '${email}'`;
 
-        if (nonUniqueEmail) {
+        const nonUniqueUserNameQuery = `SELECT * FROM public.users
+            WHERE "userName" = '${userName}'`;
+
+        const nonUniqueEmail = await userRepository.query(nonUniqueEmailQuery);
+        console.log(nonUniqueEmail);
+        if (nonUniqueEmail.length > 0) {
             return { status: 400, message: "Email already exists" };
         }
 
-        const nonUniqueUserName = await userRepository.findOne({ where: { userName } });
-
-        if (nonUniqueUserName) {
+        const nonUniqueUserName = await userRepository.query(nonUniqueUserNameQuery);
+        if (nonUniqueUserName.length > 0) {
             return { status: 400, message: "Username already exists" };
         }
 

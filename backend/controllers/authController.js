@@ -24,12 +24,6 @@ export const register = async (req, res) => {
     return res.status(400).json({ message: "Please fill in all fields" });
   }
 
-  const isEmailOk = validateEmail(email);
-
-  if (!isEmailOk) {
-    return res.status(400).json({ message: "Email is not valid." });
-  }
-
   const isPasswordWeak = validatePassword(password);
 
   if (isPasswordWeak) {

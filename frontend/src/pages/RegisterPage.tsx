@@ -54,7 +54,6 @@ export default function RegisterPage() {
             containerStyle="mb-4"
             textFieldStyle="mb-4"
             onChange={(e) => setEmail(e.target.value)}
-            type="email"
           />
         </div>
         <div className="py-4">

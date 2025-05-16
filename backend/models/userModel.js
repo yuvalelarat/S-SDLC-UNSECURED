@@ -12,12 +12,10 @@ const User = new EntitySchema({
     userName: {
       type: "varchar",
       length: 255,
-      unique: true,
     },
     email: {
       type: "varchar",
       length: 255,
-      unique: true,
     },
     password: {
       type: "varchar",
@@ -26,6 +24,7 @@ const User = new EntitySchema({
     salt: {
       type: "varchar",
       length: 255,
+      nullable: true,
     },
     tempPass: {
       type: "varchar",

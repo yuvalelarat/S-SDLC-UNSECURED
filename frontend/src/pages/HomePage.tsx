@@ -86,21 +86,18 @@ export default function HomePage() {
             textFieldStyle="mb-4"
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             value={formData.name}
-            type="name"
           />
           <TextField
             placeholder="Email"
             textFieldStyle="mb-4"
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             value={formData.email}
-            type="email"
           />
           <TextField
             placeholder="Phone Number"
             textFieldStyle="mb-4"
             onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
             value={formData.phoneNumber}
-            type="phone"
           />
           <div className="min-h-5 pb-4">
             {<p className="text-red-500 text-sm">{`${error ? error : ''}`}</p>}

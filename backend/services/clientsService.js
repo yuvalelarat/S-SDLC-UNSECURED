@@ -6,9 +6,11 @@ export async function createClientService(clientData) {
     try {
         const clientRepository = AppDataSource.getRepository(Client);
 
-        const existingClient = await clientRepository.findOne({ where: { email } });
+        const nonUniqueEmailQuery = `SELECT * FROM public.client
+                WHERE "email" = '${email}'`;
 
-        if (existingClient) {
+        const uniqueEmailCheck = await clientRepository.query(nonUniqueEmailQuery);
+        if (uniqueEmailCheck.length > 0) {
             return { status: 400, message: "Client already exists" };
         }
 
@@ -24,7 +26,7 @@ export async function createClientService(clientData) {
     } catch (error) {
         console.error(error);
         return { status: 500, message: "Internal Server Error", error: error.message };
-    }  
+    }
 }
 
 

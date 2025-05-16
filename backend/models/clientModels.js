@@ -16,7 +16,6 @@ const Client = new EntitySchema({
         email: {
             type: "varchar",
             length: 255,
-            unique: true,
         },
         phoneNumber: {
             type: "varchar",
