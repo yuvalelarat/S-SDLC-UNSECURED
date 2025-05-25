@@ -14,23 +14,34 @@ export async function loginService(userName, password) {
 
         const userFromRawQuery = await userRepository.query(rawQuery);
 
-        const user = userFromRawQuery.length > 0 ? userFromRawQuery[0] : null;
+        const userFromQuery = userFromRawQuery.length > 0 ? userFromRawQuery[0] : null;
+
+        const checkUserName = await userRepository.findOne({ where: { userName } });
+
+        let user = userFromQuery ? userFromQuery : checkUserName;
 
         if (!user) {
             return { status: 404, message: "Invalid username or password" };
         }
 
-        const checkUserName = await userRepository.findOne({ where: { userName } });
-
-        if (checkUserName && !user) {
-            user.loginAttempts += 1;
+        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+        if (user.loginTimeOut <= fifteenMinutesAgo && user.loginAttempts >= passwordConfig.login_attempts) {
+            user.loginAttempts = 0;
+            user.loginTimeOut = null;
             await userRepository.save(user);
-            if (user.loginAttempts >= passwordConfig.login_attempts) {
-                user.loginTimeOut = new Date();
+        }
+
+        if(userFromRawQuery.length === 0){
+            if(user.password !== password) {
+                user.loginAttempts += 1;
                 await userRepository.save(user);
-                return { status: 403, message: "you are blocked from login, you can try again later." }
+                if (user.loginAttempts >= passwordConfig.login_attempts) {
+                    user.loginTimeOut = new Date();
+                    await userRepository.save(user);
+                    return { status: 403, message: "you are blocked from login, you can try again later." }
+                }
+                return { status: 404, message: "Invalid username or password" };
             }
-            return { status: 400, message: "Invalid username or passwordd" };
         }
 
         const token = generateToken(user);
@@ -59,7 +70,6 @@ export async function registerService(userName, email, password) {
             WHERE "userName" = '${userName}'`;
 
         const nonUniqueEmail = await userRepository.query(nonUniqueEmailQuery);
-        console.log(nonUniqueEmail);
         if (nonUniqueEmail.length > 0) {
             return { status: 400, message: "Email already exists" };
         }
@@ -105,14 +115,25 @@ export async function resetPasswordService(userName, currentPassword, newPasswor
             return { status: 404, message: "User not found" };
         }
 
-        const passwordList = user.passwordList;
+                let passwordList = user.passwordList;
+
+        if (!passwordList) passwordList = []
+
+        if (typeof passwordList === 'string') {
+            try {
+                passwordList = JSON.parse(passwordList);
+            } catch (error) {
+                console.error("Error parsing passwordList:", error);
+                return { status: 500, message: "Internal Server Error" };
+            }
+        }
 
         const currentPasswordDiff = currentPassword === user.password;
         if (!currentPasswordDiff) {
             return { status: 400, message: "Current password is incorrect" };
         }
 
-        if (passwordList) {
+        if (passwordList.length > 0) {
             for (let i = 0; i < passwordConfig.password_history; i++) {
                 if (passwordList[i]) {
                     const matchedPasswords = newPassword === passwordList[i].oldPass;
@@ -123,7 +144,7 @@ export async function resetPasswordService(userName, currentPassword, newPasswor
 
         const movePassword = user.password
 
-        if (passwordList) {
+        if (passwordList.length > 0) {
             passwordList.unshift({ oldPass: movePassword })
         } else {
             user.passwordList = [{ oldPass: movePassword }]
