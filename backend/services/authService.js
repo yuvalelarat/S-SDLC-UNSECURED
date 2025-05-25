@@ -79,13 +79,10 @@ export async function registerService(userName, email, password) {
             return { status: 400, message: "Username already exists" };
         }
 
-        const salt = crypto.randomBytes(16).toString('hex');
-
         const newUser = userRepository.create({
             userName,
             email,
             password: password,
-            salt,
         });
 
         await userRepository.save(newUser);
@@ -127,6 +124,8 @@ export async function resetPasswordService(userName, currentPassword, newPasswor
                 return { status: 500, message: "Internal Server Error" };
             }
         }
+
+        console.log('passwordList', typeof(passwordList));
 
         const currentPasswordDiff = currentPassword === user.password;
         if (!currentPasswordDiff) {

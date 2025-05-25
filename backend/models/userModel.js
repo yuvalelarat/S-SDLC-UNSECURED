@@ -21,18 +21,13 @@ const User = new EntitySchema({
       type: "varchar",
       length: 255,
     },
-    salt: {
-      type: "varchar",
-      length: 255,
-      nullable: true,
-    },
     tempPass: {
       type: "varchar",
       length: 255,
       nullable: true,
     },
     passwordList: {
-      type: "simple-json",
+      type: "jsonb",
       nullable: true,
     },
     loginAttempts: {
