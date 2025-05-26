@@ -95,9 +95,6 @@ export async function registerService(userName, email, password) {
 }
 
 export async function resetPasswordService(userName, currentPassword, newPassword) {
-    if (currentPassword === newPassword) {
-        return { status: 400, message: "New password cannot be the same as the current password" };
-    }
 
     const validationResult = validatePassword(newPassword);
     if (validationResult !== null) {
@@ -110,6 +107,14 @@ export async function resetPasswordService(userName, currentPassword, newPasswor
 
         if (!user) {
             return { status: 404, message: "User not found" };
+        }
+
+        if (user.password !== currentPassword) {
+            return { status: 400, message: "Current password is incorrect" };
+        }
+
+        if (newPassword === user.password) {
+            return { status: 400, message: "New password cannot be the same as old passwords" };
         }
 
         let passwordList = user.passwordList;
@@ -175,10 +180,8 @@ export async function resetPasswordNoTokenService(email, newPassword) {
             return { status: 404, message: "User not found" };
         }
 
-        const isSamePassword = newPassword == user.password;
-
-        if (isSamePassword) {
-            return { status: 400, message: "New password cannot be the same as the current password" };
+        if (newPassword === user.password) {
+            return { status: 400, message: "New password cannot be the same as old passwords" };
         }
 
         let passwordList = user.passwordList;
