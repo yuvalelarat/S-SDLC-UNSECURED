@@ -39,7 +39,7 @@ export default function ForgotPassword() {
         console.log(
           `[ForgotPassword] Reset token sent successfully to email: ${email}`
         );
-        alert('Reset token sent to your email.');
+        alert('Reset token sent to your email if you are registered :)');
         setIsTempPass(true);
         setIsLoading(false);
       } else {
