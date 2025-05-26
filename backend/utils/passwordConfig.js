@@ -6,7 +6,7 @@ export const passwordConfig = {
     digits: true,
     special_characters: true,
   },
-  password_history: 3,
+  password_history: 2,
   dictionary_protection: ["password", "123456", "qwerty"],
   login_attempts: 3,
 };
