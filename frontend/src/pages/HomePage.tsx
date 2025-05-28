@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { TextField } from "../components/textField";
 import { WhiteCard } from "../components/whiteCard";
+import { validateEmail } from "../auth/validateEmail";
 
 export default function HomePage() {
   const [token, setToken] = useState<string | null>(null);
@@ -47,6 +48,12 @@ export default function HomePage() {
     e.preventDefault();
     setIsLoading(true);
 
+    if (!validateEmail(formData.email)) {
+          setError('Invalid email format.');
+          return;
+    }
+
+    
     try {
       const response = await fetch("http://localhost:3000/api/clients/create", {
         method: "POST",
