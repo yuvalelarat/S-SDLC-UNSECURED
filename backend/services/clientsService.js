@@ -9,21 +9,12 @@ export async function createClientService(clientData) {
     try {
         const clientRepository = AppDataSource.getRepository(Client);
 
-        const nonUniqueEmailQuery = `SELECT * FROM public.client
-                WHERE "email" = '${email}'`;
+        const clientExitsQuery = `SELECT * FROM public.client
+                WHERE "email" = '${email}' AND "phoneNumber" = '${phoneNumber}' AND "name" = '${name}'`;
 
-        const uniqueEmailCheck = await clientRepository.query(nonUniqueEmailQuery);
-        if (uniqueEmailCheck.length > 0) {
-            return { status: 400, message: "Email already exists" };
-        }
-
-        const existingPhone = await clientRepository.query(
-            `SELECT * FROM public.client WHERE "phoneNumber" = $1`,
-            [phoneNumber]
-        );
-
-        if (existingPhone.length > 0) {
-            return { status: 400, message: "Phone number already exists" };
+        const doesClientExists = await clientRepository.query(clientExitsQuery);
+        if (doesClientExists) {
+            return { status: 400, message: "Client already exists" };
         }
 
         const newClient = clientRepository.create({

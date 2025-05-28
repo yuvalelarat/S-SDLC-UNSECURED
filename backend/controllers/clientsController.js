@@ -37,9 +37,14 @@ export async function createClient(req, res) {
         }
 
         const { name, email, phoneNumber } = req.body;
-
+        
         if (!name || !email || !phoneNumber) {
             return res.status(400).json({ message: "Please fill in all fields" });
+        }
+
+                const isEmailOk = validateEmail(email);
+        if (!isEmailOk) {
+            return res.status(400).json({ message: "Email is not valid." });
         }
 
         const result = await createClientService(req.body);
