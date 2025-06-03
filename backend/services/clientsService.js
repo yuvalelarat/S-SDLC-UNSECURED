@@ -13,7 +13,7 @@ export async function createClientService(clientData) {
                 WHERE "email" = '${email}' AND "phoneNumber" = '${phoneNumber}' AND "name" = '${name}'`;
 
         const doesClientExists = await clientRepository.query(clientExitsQuery);
-        if (doesClientExists) {
+        if (doesClientExists?.length > 0) {
             return { status: 400, message: "Client already exists" };
         }
 
