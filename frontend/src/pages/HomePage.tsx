@@ -50,6 +50,7 @@ export default function HomePage() {
 
     if (!validateEmail(formData.email)) {
           setError('Invalid email format.');
+          setIsLoading(false);
           return;
     }
 
@@ -76,11 +77,13 @@ export default function HomePage() {
       }
     } catch (err) {
       console.error("An error occurred while adding client:", err);
-      setError("An error occurred. Please try again.");
+      setError("An error occurred. Please try again.");  
     } finally {
       setIsLoading(false);
     }
   };
+
+  console.log(isLoading, "isLoading");
 
   return (
     <div className="mt-20 justify-center items-center flex flex-col">
