@@ -62,6 +62,8 @@ Make sure PostgreSQL is running, then create a database manually:
 CREATE DATABASE project;
 ```
 
+also change the password / username / port or any configurations in the /config/data-source.js by the setup you'd like to and by the credentails on your pgAdmin / PostgreSQL
+
 ### 3. Install Dependencies and Run
 
 ```bash
